@@ -42,7 +42,7 @@
 
 主文件 `main.tex` 中最常改的是这些位置：
 
-- `\documentclass[]{template/mac_automl_xmu_blue}`：切换模板主题
+- `\documentclass[cameraready]{template/mac_automl_xmu_blue}`：切换模板主题和论文模式
 - `\setleftheadercontent{...}`：首页左上 Logo 组合
 - `\setrightheadericon{...}`：首页右上项目图标
 - `\setrunningheadericon{...}`：后续页页眉小图标
@@ -51,6 +51,34 @@
 - `\setfrontauthors{...}`：作者
 - `\setfrontaffiliations{...}`：单位
 - `\setfrontcontact{...}`：通讯作者说明
+
+## 论文模式
+
+模板支持两类常用模式：
+
+- `cameraready` / `camera-ready` / `final`：定稿模式，也是默认效果。视觉和原模板保持一致，不显示审稿辅助信息。
+- `submission` / `review`：投稿审稿模式。会启用逐行行号，并在首页标题框、摘要信息区和运行页眉中标记 `Submission / Review Copy`，方便审稿人引用具体位置。
+
+示例：
+
+```tex
+% Camera-ready，等价于原模板视觉
+\documentclass[cameraready]{template/mac_automl_xmu_blue}
+
+% 投稿审稿版：带行号和 Review Copy 标记
+\documentclass[submission]{template/mac_automl_xmu_blue}
+
+% 双盲投稿：隐藏作者、单位、联系方式和 check data
+\documentclass[submission,anonymous]{template/mac_automl_xmu_blue}
+```
+
+投稿模式下还可以在正文中临时使用 `\reviewnote{...}` 标出仅供内部审稿检查的提示；切回 `cameraready` 后这些提示不会输出。正式投稿前建议全文搜索 `\reviewnote`，确认没有遗留不应提交的内部备注。
+
+如需修改投稿模式页眉标签，可以在 `main.tex` 中设置：
+
+```tex
+\setreviewheaderlabel{Under Review}
+```
 
 ## 主题文件
 
