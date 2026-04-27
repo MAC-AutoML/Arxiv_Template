@@ -15,7 +15,21 @@
 \@ifundefined{macaccentcolordef}{\ClassError{\@classname}{Missing theme hook \string\macaccentcolordef}{Define it in the theme .cls before loading mac_automl_core.tex}}{}
 \@ifundefined{macaccenttext}{\ClassError{\@classname}{Missing theme hook \string\macaccenttext}{Define it in the theme .cls before loading mac_automl_core.tex}}{}
 
-\LoadClassWithOptions{article}
+\newif\ifmacsubmissionmode
+\newif\ifmacanonymousmode
+\macsubmissionmodefalse
+\macanonymousmodefalse
+
+\DeclareOption{submission}{\macsubmissionmodetrue}
+\DeclareOption{review}{\macsubmissionmodetrue}
+\DeclareOption{cameraready}{\macsubmissionmodefalse}
+\DeclareOption{camera-ready}{\macsubmissionmodefalse}
+\DeclareOption{final}{\macsubmissionmodefalse}
+\DeclareOption{anonymous}{\macanonymousmodetrue}
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
+\ProcessOptions\relax
+
+\LoadClass{article}
 \RequirePackage{iftex}
 \ifdefined\pdfoutput
 \pdfoutput=1
@@ -39,9 +53,7 @@
 \newcommand{\nohyphens}{\hyphenpenalty=10000\exhyphenpenalty=10000\relax}
 
 \RequirePackage{fancyhdr}
-\ifdefined\pdfoutput
-\DisableLigatures[f]{family=sf*}
-\fi
+\@ifundefined{DisableLigatures}{}{\DisableLigatures[f]{family=sf*}}
 
 % =============================================================================
 % Graphics
@@ -65,6 +77,13 @@
 \RequirePackage{amssymb}
 \RequirePackage{algorithm}
 \RequirePackage{algorithmic}
+\ifmacsubmissionmode
+  \RequirePackage[switch,mathlines]{lineno}
+  \AtBeginDocument{%
+    \modulolinenumbers[1]%
+    \linenumbers
+  }
+\fi
 \RequirePackage{pifont}
 \RequirePackage{marvosym}
 \newcommand{\nm}[1]{#1}
@@ -80,6 +99,7 @@
 \newcommand{\omniaccent}[1]{\macaccenttext{#1}}
 \definecolor{black}{rgb}{0,0,0}
 \newcommand{\black}[1]{{\bfseries\color[HTML]{000000} #1}}
+\definecolor{macreviewnote}{RGB}{172,73,0}
 
 % =============================================================================
 % References
@@ -153,11 +173,17 @@
 
 \ifXeTeX
   \RequirePackage{fontspec}
-  \setmainfont[
-    SmallCapsFeatures = {Letters=SmallCaps}
-  ]{TeX Gyre Termes}
-  \setsansfont{Noto Sans}
-  \setmonofont{Noto Sans Mono}
+  \IfFontExistsTF{TeX Gyre Termes}{%
+    \setmainfont[
+      SmallCapsFeatures = {Letters=SmallCaps}
+    ]{TeX Gyre Termes}%
+  }{%
+    \setmainfont[
+      SmallCapsFeatures = {Letters=SmallCaps}
+    ]{Nimbus Roman}%
+  }
+  \IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{\setsansfont{Liberation Sans}}
+  \IfFontExistsTF{Noto Sans Mono}{\setmonofont{Noto Sans Mono}}{\setmonofont{Liberation Mono}}
   \newfontfamily\omnibytesansmedium[
     Path = assets/fonts/,
     Extension = .ttf,
@@ -297,6 +323,22 @@
 \newcommand{\setfrontaffiliations}[1]{\setaffiliationrows{#1}}
 \newcommand{\setfrontcontact}[1]{\setcontactrows{#1}}
 
+\ifmacanonymousmode
+  \AtBeginDocument{%
+    \gdef\authorlist{%
+      {\fontsize{12}{14}\selectfont\color{black!96}%
+      \ifXeTeX\omniauthorfont\bfseries\else\sffamily\bfseries\fi
+      Anonymous Authors}}%
+    \gdef\affiliationlist{%
+      {\fontsize{9.9}{11.9}\selectfont\color{black!70}%
+      \ifXeTeX\omnibytesansmedium\else\sffamily\fi
+      Affiliations withheld for double-blind review}}%
+    \gdef\emaillist{}%
+    \gdef\maccontactrows{}%
+    \gdef\checkdatalist{}%
+  }
+\fi
+
 \renewcommand\date[1]{\checkdata[Date]{#1}}
 \newcommand\correspondence[1]{\checkdata[Correspondence]{#1}}
 
@@ -326,6 +368,11 @@
 % =============================================================================
 
 \newcommand{\macparagraph}[1]{\par\vspace{2pt}\noindent\textbf{#1}\hspace{1.8ex}}
+\newcommand{\reviewnote}[1]{%
+  \ifmacsubmissionmode
+    {\color{macreviewnote}\bfseries [Review note: }{\color{macreviewnote}#1}{\color{macreviewnote}\bfseries ]}%
+  \fi
+}
 \definecolor{macgreen}{RGB}{34,139,34}
 \definecolor{macred}{RGB}{220,20,60}
 \definecolor{macorange}{RGB}{255,140,0}
@@ -362,11 +409,13 @@
 \newcommand{\macrightheadericon}{}
 \newcommand{\macrunningheadericon}{}
 \newcommand{\macheadertextcontent}{MAC-AutoML}
+\newcommand{\macreviewheaderlabel}{Submission / Review Copy}
 
 \newcommand{\setleftheadercontent}[1]{\gdef\macleftheadercontent{#1}}
 \newcommand{\setrightheadericon}[1]{\gdef\macrightheadericon{#1}}
 \newcommand{\setrunningheadericon}[1]{\gdef\macrunningheadericon{#1}}
 \newcommand{\setheadergroupname}[1]{\gdef\macheadertextcontent{#1}}
+\newcommand{\setreviewheaderlabel}[1]{\gdef\macreviewheaderlabel{#1}}
 \newcommand{\headerlogo}[3][0pt]{\raisebox{#1}{\includegraphics[height=#2]{#3}}}
 \newcommand{\headerlogospace}[1]{\hspace*{#1}}
 
@@ -377,9 +426,9 @@
   }%
 }
 \ifXeTeX
-\newcommand{\omniheadertext}{{\omniauthorfont\fontsize{8.1}{10}\selectfont\color{black!58}\addfontfeatures{LetterSpace=4}\macheadertextcontent}}
+\newcommand{\omniheadertext}{{\omniauthorfont\fontsize{8.1}{10}\selectfont\color{black!58}\addfontfeatures{LetterSpace=4}\macheadertextcontent\ifmacsubmissionmode\space/\space\macreviewheaderlabel\fi}}
 \else
-\newcommand{\omniheadertext}{\sffamily\fontsize{8.1}{10}\selectfont\color{black!60} \macheadertextcontent}
+\newcommand{\omniheadertext}{\sffamily\fontsize{8.1}{10}\selectfont\color{black!60} \macheadertextcontent\ifmacsubmissionmode\space/\space\macreviewheaderlabel\fi}
 \fi
 \fancypagestyle{firststyle}{
     \fancyhead[L]{
@@ -444,6 +493,10 @@
       \vspace*{-4.8mm}
       \@toptitlebar
 
+        \ifmacsubmissionmode
+          {\sffamily\fontsize{9.2}{11}\selectfont\bfseries\color{omniaccent!72!black}\macreviewheaderlabel\par}
+          \vskip 2.4mm
+        \fi
         \titlelist\par
          \@bottomtitlebar
       }
@@ -486,6 +539,9 @@
     {
       \setlength{\parskip}{0cm}
       \ifdefempty{\checkdatalist}{\vspace*{0.02cm}}{\checkdatalist\par}
+      \ifmacsubmissionmode
+        {\small {\checkdatafont\sffamily \bfseries Mode:} \macreviewheaderlabel\par}
+      \fi
     }
   \end{tcolorbox}
   \tcbset{reset}
